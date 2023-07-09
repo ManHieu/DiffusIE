@@ -64,14 +64,20 @@ class DiffusIEModel(pl.LightningModule):
     def configure_optimizers(self) -> Any:
         num_batches = self.trainer.estimated_stepping_batches
 
+        no_decay = ['bias', 'gamma', 'beta', "LayerNorm.weight"]
+
         parameters = [
-            {'params': [p for n, p in self.model.named_parameters() if p.requires_grad], 'lr': self.params.diff_lr, 'weight_decay': 0.0},
-            {'params': [p for n, p in self.encoder.named_parameters() if p.requires_grad], 'lr': self.params.encoder_lr},
-            {'params': [p for n, p in self.proj.named_parameters() if p.requires_grad], 'lr': self.params.head_lr},
-            {'params': [p for n, p in self.predictor.named_parameters() if p.requires_grad], 'lr': self.params.head_lr},
+            {'params': [p for n, p in self.model.named_parameters() if p.requires_grad and not any(nd in n for nd in no_decay)], 'lr': self.params.diff_lr, 'weight_decay': 0.01},
+            {'params': [p for n, p in self.model.named_parameters() if p.requires_grad and any(nd in n for nd in no_decay)], 'lr': self.params.diff_lr, 'weight_decay': 0.00},
+            {'params': [p for n, p in self.encoder.named_parameters() if p.requires_grad and not any(nd in n for nd in no_decay)], 'lr': self.params.encoder_lr, 'weight_decay': 0.01},
+            {'params': [p for n, p in self.encoder.named_parameters() if p.requires_grad and any(nd in n for nd in no_decay)], 'lr': self.params.encoder_lr, 'weight_decay': 0.00},
+            {'params': [p for n, p in self.proj.named_parameters() if p.requires_grad and not any(nd in n for nd in no_decay)], 'lr': self.params.head_lr, 'weight_decay': 0.01},
+            {'params': [p for n, p in self.proj.named_parameters() if p.requires_grad and any(nd in n for nd in no_decay)], 'lr': self.params.head_lr, 'weight_decay': 0.00},
+            {'params': [p for n, p in self.predictor.named_parameters() if p.requires_grad and not any(nd in n for nd in no_decay)], 'lr': self.params.head_lr, 'weight_decay': 0.01},
+            {'params': [p for n, p in self.predictor.named_parameters() if p.requires_grad and any(nd in n for nd in no_decay)], 'lr': self.params.head_lr, 'weight_decay': 0.00},
         ]
 
-        optimizer = torch.optim.AdamW(parameters, weight_decay=0)
+        optimizer = torch.optim.AdamW(parameters)
         scheduler = get_cosine_schedule_with_warmup(optimizer=optimizer, 
                                                     num_warmup_steps=100,
                                                     num_training_steps=num_batches)
@@ -117,14 +123,12 @@ class DiffusIEModel(pl.LightningModule):
         print(f"Confusion Matrix: \n{CM}")
         if verbose:
             print(classification_report(labels, predicts))
-        if self.params.data_name == 'ESL':
-            tp = sum([CM[i, i] for i in range(2)]) + 1
-            n_preds = sum([CM[i, :-1].sum() for i in range(3)]) + 1 
-            t_golds = sum([CM[i].sum() for i in range(2)]) + 1
-        elif self.params.data_name == 'Causal-TB':
+        if self.params.data_name in ['ESL', 'Causal-TB', 'MECI-en', 'MECI-da', 'MECI-es', 'MECI-tr', 'MECI-ur']:
             tp = sum([CM[i, i] for i in range(1)]) + 1
             n_preds = sum([CM[i, :-1].sum() for i in range(2)]) + 1 
             t_golds = sum([CM[i].sum() for i in range(1)]) + 1
+        else:
+            raise "We haven't this dataset yet!"
         
         P = tp/n_preds
         R = tp/t_golds
@@ -176,7 +180,7 @@ class DiffusIEModel(pl.LightningModule):
                 latents.append(latent)
                 
             latents = torch.stack(latents, dim=0) # (bs, label_max_len, hidden_dim)
-            # TODO: concatenate with origin pair_emb
+            #[x]TODO: concatenate with origin pair_emb
             latents = latents[:,0,:]
             pair_emb = rearrange(pair_emb, 'b l h -> b (l h)')
             augemented_pair_emb1 = torch.cat([pair_emb, latents], dim=-1)

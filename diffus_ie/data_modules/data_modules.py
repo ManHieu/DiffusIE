@@ -9,7 +9,7 @@ from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader
 import tqdm
 from transformers import AutoTokenizer
-from diffus_ie.data_modules.constants import CTB_LABEL, ESL_LABEL
+from diffus_ie.data_modules.constants import CTB_LABEL, ESL_LABEL, MECI_LABEL
 from diffus_ie.data_modules.data_preparer import load
 
 
@@ -21,11 +21,16 @@ class EREDataModule(pl.LightningDataModule):
         self.dataname = self.params.data_name 
         if self.dataname == 'ESL':
             self.label_map = ESL_LABEL
+            self.fold = fold
         elif self.dataname == 'Causal-TB':
             self.label_map = CTB_LABEL
+            self.fold = fold
+        elif self.dataname in ['MECI-en', 'MECI-da', 'MECI-es', 'MECI-tr', 'MECI-ur']:
+            self.label_map = MECI_LABEL
+            self.fold = None
+    
         self.model_name = self.params.model_name
         self.batch_size = self.params.batch_size
-        self.fold = fold
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name, cache_dir=params.hf_cache)
     
     def transfrom(self, dataset):
@@ -97,7 +102,10 @@ class EREDataModule(pl.LightningDataModule):
         return ids, e1_index, e2_index
 
     def prepare_data(self) -> None:
-        self.cache_path = os.path.join(self.params.cache, f"{self.dataname}_intra_{self.params.intra}_inter_{self.params.inter}_fold_{self.fold}")
+        if hasattr(self, 'fold'):
+            self.cache_path = os.path.join(self.params.cache, f"{self.dataname}_intra_{self.params.intra}_inter_{self.params.inter}_fold_{self.fold}")
+        else:
+            self.cache_path = os.path.join(self.params.cache, f"{self.dataname}_intra_{self.params.intra}_inter_{self.params.inter}")
         try:
             dataset_dict = datasets.load_from_disk(self.cache_path)
         except:
@@ -165,7 +173,7 @@ class EREDataModule(pl.LightningDataModule):
         return input_ids, attn_mask, label_ids, label_attn_mask, trigger_positions, label
     
     def get_collate_fn(self):
-        if self.dataname in ['ESL', 'Causal-TB']:
+        if self.dataname in ['ESL', 'Causal-TB', 'MECI-en', 'MECI-da', 'MECI-es', 'MECI-tr', 'MECI-ur']:
             return self.ECI_collate
         else:
             raise f"We haven't support {self.dataname}!"

@@ -9,7 +9,7 @@ import tqdm
 import datasets
 from datasets import DatasetDict, Dataset
 
-from diffus_ie.data_modules.data_reader import cat_xml_reader, ctb_cat_reader
+from diffus_ie.data_modules.data_reader import cat_xml_reader, ctb_cat_reader, meci_tsvx_reader
 
 
 class Preprocessor(object):
@@ -25,6 +25,8 @@ class Preprocessor(object):
             self.reader = cat_xml_reader
         elif dataset == 'Causal-TB':
             self.reader = ctb_cat_reader
+        elif dataset in ['MECI-en', 'MECI-da', 'MECI-es', 'MECI-tr', 'MECI-ur']:
+            self.reader = meci_tsvx_reader
         else:
             raise ValueError("We have not supported this dataset {} yet!".format(self.dataset))
     
@@ -166,5 +168,29 @@ def load(dataset: str, load_fold: int=0, intra=True, inter=True):
             folds[str(fold)] = {'train': train,
                            'dev': validate}
         return folds
+    
+    if dataset in ['MECI-en', 'MECI-da', 'MECI-es', 'MECI-tr', 'MECI-ur']:
+        processor = Preprocessor(dataset)
+        if dataset == 'MECI-da':
+            corpus_dir = '/disk/hieu/IE/data/meci-dataset/meci-v0.1-public/causal-da'
+        elif dataset == 'MECI-en':
+            corpus_dir = '/disk/hieu/IE/data/meci-dataset/meci-v0.1-public/causal-en'
+        elif dataset == 'MECI-es':
+            corpus_dir = '/disk/hieu/IE/data/meci-dataset/meci-v0.1-public/causal-es'
+        elif dataset == 'MECI-tr':
+            corpus_dir = '/disk/hieu/IE/data/meci-dataset/meci-v0.1-public/causal-tr'
+        elif dataset == 'MECI-ur':
+            corpus_dir = '/disk/hieu/IE/data/meci-dataset/meci-v0.1-public/causal-ur'
+        
+        train_dir = corpus_dir + '/train/'
+        val_dir = corpus_dir + '/dev/'
+        test_dir = corpus_dir + '/test/'
+
+        data = {
+            'train': processor.load_dataset(train_dir),
+            'dev': processor.load_dataset(val_dir),
+            'test': processor.load_dataset(test_dir)
+        }
+        return data
     
     print(f"We have not supported {dataset} dataset!")

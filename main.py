@@ -38,10 +38,10 @@ def run(trial: optuna.trial.Trial = None, args = None):
                   'encoder_warm_up': trial.suggest_categorical('encoder_warm_up', [1, 3, 5]),
                   'diffusion_train_step': trial.suggest_categorical('diffusion_train_step', [500, 1000, 2000, 3000]),
                   'diffusion_inference_step': trial.suggest_categorical('diffusion_inference_step', [50, 100, 200]),
-                  'block_type': trial.suggest_categorical('block_type', ["in-context"]), # adaLN-Zero
+                  'block_type': trial.suggest_categorical('block_type', ["in-context", "adaLN-Zero"]), # 
                   'diff_depth': trial.suggest_categorical('diff_depth', [2, 4, 6, 8]),
                   'diff_lr': trial.suggest_categorical('diff_lr', [8e-6, 1e-5, 3e-5, 5e-5, 8e-5]),
-                  'encoder_lr': trial.suggest_categorical('encoder_lr', [3e-6, 5e-6, 8e-6]),
+                  'encoder_lr': trial.suggest_categorical('encoder_lr', [3e-6, 5e-6, 8e-6, 1e-5, 2e-5]),
                   'head_lr': trial.suggest_categorical('head_lr', [3e-5, 5e-5, 8e-5, 1e-4]),}
         
         print("Hyperparams: {}".format(config))
@@ -92,20 +92,20 @@ def run(trial: optuna.trial.Trial = None, args = None):
         checkpoint_save_dir.mkdir(parents=True, exist_ok=True)
         checkpoint_callback = ModelCheckpoint(
                                     dirpath=checkpoint_save_dir,
-                                    every_n_epochs=5,
+                                    every_n_epochs=1,
                                     save_top_k=1,
-                                    monitor='hp_metric/f1_val',
+                                    monitor='hp_metric',
                                     mode='max',
-                                    filename='{epoch}-{hp_metric/f1_val:.2f}', # this cannot contain slashes 
+                                    filename='{epoch}-{f1_val:.2f}', # this cannot contain slashes 
                                     )
         lr_logger = LearningRateMonitor(logging_interval='step')
         tb_logger = pl_loggers.TensorBoardLogger(save_dir=checkpoint_save_dir)
 
         if trial != None:
             optuna_callback = PyTorchLightningPruningCallback(trial, monitor="hp_metric/f1_val")
-            callbacks = [lr_logger, optuna_callback,]
+            callbacks = [lr_logger, checkpoint_callback, optuna_callback,]
         else:
-            callbacks = [lr_logger,]
+            callbacks = [lr_logger, checkpoint_callback,]
 
         if args.tuning or args.training:
             trainer = Trainer(
@@ -126,12 +126,13 @@ def run(trial: optuna.trial.Trial = None, args = None):
             p, r, f1 = model.val_result
 
             # TODO: Un-comment when publish
-            # best_checkpoint = checkpoint_callback.best_model_path
-            # model = DiffusIEModel.load_from_checkpoint(best_checkpoint, map_location=torch.device('cpu'))
-            # trainer.test(model, datamodule=dm)
-            # p, r, f1 = model.result
+            if args.testing:
+                best_checkpoint_path = checkpoint_callback.best_model_path
+                model = DiffusIEModel.load_from_checkpoint(best_checkpoint_path, map_location=torch.device('cpu'))
+                trainer.test(model, datamodule=dm)
+                p, r, f1 = model.result
 
-        if args.testing:
+        if args.testing and not (args.training or args.tuning):
             assert args.load_checkpoint != None
             checkpoint = args.load_checkpoint
             model = DiffusIEModel.load_from_checkpoint(checkpoint, map_location=torch.device('cpu'))
@@ -167,18 +168,17 @@ def run(trial: optuna.trial.Trial = None, args = None):
     print(f"F1: {f1} - P: {p} - R: {r}")
 
     record_file_name = f'result_{args.data_name}_intra_{args.intra}_inter_{args.inter}.log'
-    if f1 > 0.68:
-        with open(record_file_name, 'a', encoding='utf-8') as f:
-            f.write(f"Dataset: {args.data_name} (Intra: {args.intra}, Inter: {args.inter}) \n")
-            f.write(f"Random_state: 1741\n")
-            if trial != None:
-                f.write(f"Hyperparams: \n {trial.params.items()}\n")
-            else:
-                f.write(f"Hyperparams: \n {args}\n")
-            f.write(f"F1: {f1}  \n")
-            f.write(f"P: {p} \n")
-            f.write(f"R: {r} \n")
-            f.write(f"{'--'*10} \n")
+    with open(record_file_name, 'a', encoding='utf-8') as f:
+        f.write(f"Dataset: {args.data_name} (Intra: {args.intra}, Inter: {args.inter}) \n")
+        f.write(f"Random_state: 1741\n")
+        if trial != None:
+            f.write(f"Hyperparams: \n {trial.params.items()}\n")
+        else:
+            f.write(f"Hyperparams: \n {args}\n")
+        f.write(f"F1: {f1}  \n")
+        f.write(f"P: {p} \n")
+        f.write(f"R: {r} \n")
+        f.write(f"{'--'*10} \n")
 
     return f1
 
