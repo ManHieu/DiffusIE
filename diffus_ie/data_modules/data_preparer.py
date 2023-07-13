@@ -128,7 +128,7 @@ def load(dataset: str, load_fold: int=0, intra=True, inter=True):
         kfold = KFold(n_splits=5)
         print(f"Loading ESL intra {intra}, inter {inter}")
         processor = Preprocessor(dataset, intra=intra, inter=inter)
-        corpus_dir = '/disk/hieu/IE/data/EventStoryLine/annotated_data/v1.5/'
+        corpus_dir = '/home/daclai/DiffusECI/data/EventStoryLine/annotated_data/v1.5/'
         corpus = processor.load_dataset(corpus_dir)
 
         _train, test = [], []
@@ -157,7 +157,7 @@ def load(dataset: str, load_fold: int=0, intra=True, inter=True):
         kfold = KFold(n_splits=10)
         print('Loading Causal-TB')
         processor = Preprocessor(dataset)
-        corpus_dir = '/disk/hieu/IE/data/Causal-TB/Causal-TB-CAT/'
+        corpus_dir = '/home/daclai/DiffusECI/data/Causal-TB/Causal-TB-CAT/'
         corpus = processor.load_dataset(corpus_dir)
 
         random.shuffle(corpus)
@@ -172,15 +172,15 @@ def load(dataset: str, load_fold: int=0, intra=True, inter=True):
     if dataset in ['MECI-en', 'MECI-da', 'MECI-es', 'MECI-tr', 'MECI-ur']:
         processor = Preprocessor(dataset)
         if dataset == 'MECI-da':
-            corpus_dir = '/disk/hieu/IE/data/meci-dataset/meci-v0.1-public/causal-da'
+            corpus_dir = '/home/daclai/DiffusECI/data/meci-dataset/meci-v0.1-public/causal-da'
         elif dataset == 'MECI-en':
-            corpus_dir = '/disk/hieu/IE/data/meci-dataset/meci-v0.1-public/causal-en'
+            corpus_dir = '/home/daclai/DiffusECI/data/meci-dataset/meci-v0.1-public/causal-en'
         elif dataset == 'MECI-es':
-            corpus_dir = '/disk/hieu/IE/data/meci-dataset/meci-v0.1-public/causal-es'
+            corpus_dir = '/home/daclai/DiffusECI/data/meci-dataset/meci-v0.1-public/causal-es'
         elif dataset == 'MECI-tr':
-            corpus_dir = '/disk/hieu/IE/data/meci-dataset/meci-v0.1-public/causal-tr'
+            corpus_dir = '/home/daclai/DiffusECI/data/meci-dataset/meci-v0.1-public/causal-tr'
         elif dataset == 'MECI-ur':
-            corpus_dir = '/disk/hieu/IE/data/meci-dataset/meci-v0.1-public/causal-ur'
+            corpus_dir = '/home/daclai/DiffusECI/data/meci-dataset/meci-v0.1-public/causal-ur'
         
         train_dir = corpus_dir + '/train/'
         val_dir = corpus_dir + '/dev/'

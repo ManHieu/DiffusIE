@@ -9,7 +9,7 @@ import csv
 from trankit import Pipeline
 from diffus_ie.utils.reader_utils import find_m_id, find_sent_id, get_mention_span, id_lookup, sent_id_lookup, span_SENT_to_DOC, tokenized_to_origin_span
 
-p = Pipeline('english')
+p = Pipeline('english', cache_dir='/home/daclai/DiffusECI/cache')
 p.add('danish')
 p.add('spanish')
 p.add('turkish')
@@ -151,7 +151,7 @@ def cat_xml_reader(dir_name, file_name, intra=True, inter=False):
                 
     event_pairs = list(combinations(my_dict['event_dict'].keys(), 2))
     if inter==True:
-        dir_name = '/disk/hieu/IE/data/EventStoryLine/annotated_data/v1.5/'
+        dir_name = '/home/daclai/DiffusECI/data/EventStoryLine/annotated_data/v1.5/'
         inter_dir_name = dir_name.replace('annotated_data', 'evaluation_format/full_corpus') + 'event_mentions_extended/'
         file_name = file_name.replace('.xml.xml', '.tab')
         lines = []
@@ -418,7 +418,7 @@ def meci_tsvx_reader(dir_name, file_name):
 
 if __name__ == '__main__':
     
-    # my_dict = cat_xml_reader(dir_name="/disk/hieu/IE/data/EventStoryLine/annotated_data/v1.5/", file_name="1/1_1ecbplus.xml.xml", intra=True, inter=True)
+    # my_dict = cat_xml_reader(dir_name="/home/daclai/DiffusECI/data/EventStoryLine/annotated_data/v1.5/", file_name="1/1_1ecbplus.xml.xml", intra=True, inter=True)
     # with open("1_1ecbplus.xml.xml.json", 'w') as f:
     #     json.dump(my_dict,f, indent=6)
     

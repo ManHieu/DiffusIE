@@ -50,14 +50,14 @@ def create_argument_parser():
                         help="Number of gradient accumulation steps used to train the model")
     
     ###### MISC parameters ######
-    parser.add_argument("--config_file", type=str, default='/disk/hieu/IE/DiffusIE/config.ini',
+    parser.add_argument("--config_file", type=str, default='/sensei-fs/users/daclai/hieu/DiffusIE/config.ini',
                         help="The path to config file of system")
-    parser.add_argument("--output_dir", type=str, default='/disk/hieu/IE/DiffusIE/experiments',
+    parser.add_argument("--output_dir", type=str, default='/home/daclai/DiffusECI/experiments',
                         help="The path to save model checkpoints and logs")
-    parser.add_argument("--hf_cache", type=str, default='/disk/hieu/IE/hf_cache',
+    parser.add_argument("--hf_cache", type=str, default='/home/daclai/DiffusECI/hf_cache',
                         help="The path to save huggingface cache")
-    parser.add_argument("--cache", type=str, default='/disk/hieu/IE/DiffusIE/cache',
-                        help="The path to save huggingface cache")
+    parser.add_argument("--cache", type=str, default='/home/daclai/DiffusECI/cache',
+                        help="The path to save system cache")
     parser.add_argument('--devices', nargs='+', type=int,
                         help="Specify which gpu will use")
     parser.add_argument('--tuning', action='store_true', default=False, 
