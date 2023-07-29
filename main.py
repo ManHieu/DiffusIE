@@ -125,7 +125,6 @@ def run(trial: optuna.trial.Trial = None, args = None):
             trainer.fit(model, datamodule=dm)
             p, r, f1 = model.val_result
 
-            # TODO: Un-comment when publish
             if args.testing:
                 best_checkpoint_path = checkpoint_callback.best_model_path
                 model = DiffusIEModel.load_from_checkpoint(best_checkpoint_path, map_location=torch.device('cpu'))
